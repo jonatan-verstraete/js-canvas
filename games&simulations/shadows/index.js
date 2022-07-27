@@ -1,0 +1,80 @@
+
+const light={
+    x: Xmid,
+    y: Ymid,
+    s: 50,
+    watt: 0.3,
+    draw() {
+        this.x = mouseX
+        this.y = mouseY
+        circle(this.x, this.y, this.s*this.watt, null, "orange")
+    }
+}
+const maxDis = sqrt(Xmax**2 + Ymax**2)/2
+
+
+function shadeShape(points) {
+    /* 
+        TODO: 
+        -should be the further the light, the smaller the shadow. comment 2: OK, but too small
+        -https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createLinearGradient
+
+    */
+
+    /* Light distance: */
+    // sqrt(Xmax ** 2 + Ymax ** 2)*light.watt * -1
+    // (500/distanceTo(m, light, true))*-1*distanceTo(m, light, true)
+    // (distanceTo(m, light, true))*-1
+
+    // draw original shape
+    ctx.fillStyle="white"
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    points.forEach(i=> {
+        ctx.lineTo(i.x, i.y)
+    })
+    ctx.closePath()
+    ctx.fill()
+
+
+    // sorting the points ond istance to light and getting their next position
+    const pts = copy(points)
+
+    pts.forEach(i=> { 
+        i.dis = maxDis - distanceTo(i, light, true)
+        // i.dis = (50000/distanceTo(i, light, true))
+        i.pst = posTowards(i, light, i.dis*-1) 
+    })
+    pts.sort((a, b)=>b.dis - a.dis)
+
+    ctx.fillStyle="#1118"
+    const {0:a,1:b,2:c,3:d} = pts
+
+    ctx.beginPath()
+    // furthest to 'b' corner
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    // move to new  corners
+    ctx.lineTo(b.x+b.pst.x, b.y+b.pst.y)
+    ctx.lineTo(a.x+a.pst.x, a.y+a.pst.y)
+    ctx.lineTo(c.x+c.pst.x, c.y+c.pst.y)
+    // back to shape
+    ctx.lineTo(c.x, c.y)
+    ctx.closePath()
+    ctx.fill()
+}
+
+
+const shape0 = getquarePoints(600, 400, 50)
+
+async function draw() {
+    ctx.background("#222")
+    clear()
+    light.draw()
+    shadeShape(shape0)
+    await pauseHalt(null, false)
+
+    requestAnimationFrame(draw)
+}
+
+draw()
